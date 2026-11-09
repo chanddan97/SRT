@@ -1,66 +1,306 @@
-<!doctype html>
-<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1220"><title>Bengali Audio to SRT V2</title>
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>বাংলা Audio to SRT — Gemini</title>
 <style>
-:root{color-scheme:dark;--bg:#0b1220;--p:#142139;--line:#304766;--t:#edf4ff;--m:#a9bad2;--g:#6ee7b7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(800px 400px at 50% 0,#203b5e,var(--bg) 70%);color:var(--t);font:15px/1.55 system-ui,"Noto Sans Bengali",sans-serif}main{max-width:850px;margin:auto;padding:18px 14px 40px}.muted,.hint{color:var(--m)}.card{background:var(--p);border:1px solid var(--line);border-radius:16px;padding:16px;margin:13px 0}.card h2{font-size:18px;margin:0 0 12px}.tag{color:var(--g);font-size:12px;font-weight:800}.top h1{font-size:clamp(26px,6vw,36px);margin:6px 0}.drop{display:block;text-align:center;padding:22px;border:1.5px dashed #6685ae;border-radius:13px;background:#192b45;cursor:pointer}.drop b{display:block;font-size:17px}.drop small{color:var(--m)}input[type=file]{display:none}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:0;border-radius:10px;padding:12px 14px;background:var(--g);color:#05251a;font-weight:800;cursor:pointer}.btn.alt{background:#2b4264;color:var(--t);border:1px solid #496489}.btn.stop{background:#562e39;color:#ffdce0}.btn:disabled{opacity:.4}.grow{flex:1}.status{background:#1b2d48;border-radius:10px;padding:11px;margin-top:10px;color:var(--m);white-space:pre-wrap;overflow-wrap:anywhere}.ok{color:#9df2ca}.err{color:#ffaaaa}progress{width:100%;height:10px;accent-color:var(--g);margin:12px 0 3px}.file{color:var(--g);font-size:13px;overflow-wrap:anywhere}.stats{display:flex;gap:7px;flex-wrap:wrap}.stat{font-size:12px;background:#20334f;border:1px solid #3b5578;border-radius:20px;padding:5px 9px}.sublist{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto}.sub{background:#0d192a;border:1px solid #304766;border-radius:10px;padding:10px}.time{font:12px monospace;color:#91bfff;margin-bottom:5px}.subtext{white-space:pre-wrap;overflow-wrap:anywhere}.sub textarea{width:100%;min-height:65px;background:#13233a;color:var(--t);border:1px solid #496489;border-radius:8px;padding:8px;font:inherit}.subgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px}.sub input{width:100%;background:#13233a;color:var(--t);border:1px solid #496489;border-radius:8px;padding:7px;font:12px monospace}.warning{border-left:3px solid #efc56e;background:#342e21;color:#f6dfaa;padding:10px;border-radius:8px;font-size:12px}.hint{font-size:12px}textarea#raw{width:100%;min-height:160px;background:#0d192a;color:var(--t);border:1px solid var(--line);border-radius:9px;padding:10px;font:13px/1.5 monospace}.foot{text-align:center;color:#8194af;font-size:11px}
-</style></head><body><main>
-<header class="top"><div class="tag">FREE · LOCAL AI · NO API KEY</div><h1>বাংলা Audio → SRT Studio V2</h1><div class="muted">Whisper Small · Quick Generate · Live Preview · SRT Download</div></header>
-<section class="card"><h2>১. Audio নির্বাচন করুন</h2><label class="drop" for="audio"><b>＋ অডিও ফাইল নির্বাচন করুন</b><small>MP3 · WAV · M4A · AAC · OGG · FLAC (browser support অনুযায়ী)</small></label><input id="audio" type="file" accept="audio/*"><p class="file" id="fileinfo">কোনো ফাইল নির্বাচন করা হয়নি</p>
-<div class="row"><button class="btn grow" id="go" disabled>⚡ QUICK GENERATE</button><button class="btn alt" id="pause" disabled>Pause</button><button class="btn stop" id="stop" disabled>Stop</button></div>
-<progress id="bar" max="100" value="0"></progress><div class="status" id="status">প্রথমবার মডেল ডাউনলোড হবে। Internet চালু রাখুন।</div><div class="stats" style="margin-top:10px"><span class="stat" id="model">Model: not loaded</span><span class="stat" id="elapsed">Time: 00:00</span><span class="stat" id="count">Segments: 0</span></div></section>
-<section class="card"><div class="row"><h2 class="grow" style="margin:0">২. Live Subtitle Preview</h2><button class="btn alt" id="edit" disabled>Edit</button></div><p class="hint">প্রসেসিংয়ের সময় subtitle এখানে যোগ হবে। Edit চাপলে লেখা ও timestamp পরিবর্তন করতে পারবেন।</p><div id="preview" class="sublist"><div class="status">এখনও subtitle তৈরি হয়নি।</div></div>
-<div class="row" style="margin-top:12px"><button class="btn grow" id="srt" disabled>⬇ Download SRT</button><button class="btn alt" id="txt" disabled>⬇ TXT</button><button class="btn alt" id="copy" disabled>Copy</button></div></section>
-<section class="card"><h2>৩. SRT Text Preview</h2><textarea id="raw" spellcheck="false" placeholder="SRT text এখানে দেখা যাবে..."></textarea><p class="hint">SRT text কপি বা যাচাই করতে পারবেন।</p></section>
-<section class="card"><h2>Offline ও Background নোট</h2><div class="warning">Whisper Small-এর কয়েকশ MB model file এক HTML-এর ভিতরে এমবেড করা নেই। প্রথমবার runtime ও model internet থেকে download হয়ে browser cache-এ থাকবে। Cache মুছে গেলে আবার download লাগতে পারে। এটিই browser-based “inbuilt/cached model”; সম্পূর্ণ offline installer নয়।</div><p class="hint">Web Worker UI সচল রাখে এবং tab background-এ গেলে কিছু সময় কাজ চলতে পারে। Android Chrome ব্যাটারি/RAM বাঁচাতে tab suspend করতে পারে। তাই screen on ও tab খোলা রাখুন। Speed ফোনের CPU/RAM ও audio length-এর ওপর নির্ভরশীল।</p></section><div class="foot">Audio transcription runs locally in your browser. Audio is not uploaded to a transcription server.</div>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#121d2e;--line:#26364d;--text:#edf4ff;--muted:#a9b8cc;--blue:#62a8ff;--green:#52d6a0;--red:#ff7777}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#0b1220,#101c30);color:var(--text);font:15px system-ui,-apple-system,"Noto Sans Bengali",sans-serif}
+main{max-width:820px;margin:auto;padding:18px 14px 40px}.hero{padding:18px 4px 12px}h1{font-size:25px;margin:0 0 7px}.sub{color:var(--muted);line-height:1.55}
+.card{background:rgba(18,29,46,.96);border:1px solid var(--line);border-radius:16px;padding:16px;margin:13px 0;box-shadow:0 8px 28px #0002}
+h2{font-size:17px;margin:0 0 12px}.field{display:block;margin:10px 0 6px;color:var(--muted);font-size:13px}
+input,select,textarea{width:100%;background:#0b1423;color:var(--text);border:1px solid #34465f;border-radius:10px;padding:12px;font:inherit;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}input[type=file]{padding:10px}
+button{border:0;border-radius:10px;padding:12px 15px;font:600 14px system-ui;cursor:pointer;background:#263b58;color:white}
+button.primary{background:#2478dc;color:#fff}button:disabled{opacity:.45;cursor:not-allowed}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+.small{font-size:12px;color:var(--muted);line-height:1.55}.status{padding:11px 12px;border-radius:10px;background:#0b1423;border:1px solid var(--line);margin-top:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.status.good{border-color:#28694f;color:#9af0c9}.status.bad{border-color:#754047;color:#ffaaaa}
+progress{width:100%;height:9px;margin-top:10px;accent-color:var(--blue)}
+.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#1d3551;color:#b9d8ff;font-size:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{flex:1;min-width:130px}
+.subitem{border:1px solid var(--line);border-radius:12px;padding:11px;margin:9px 0;background:#0c1727}
+.subitem textarea{min-height:58px;margin-top:8px}.times{display:flex;gap:8px}.times input{min-width:0;padding:9px}
+.subhead{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+.hidden{display:none!important}a{color:#8ec2ff}
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <span class="pill">GEMINI API · SINGLE HTML</span>
+    <h1>বাংলা Audio to SRT</h1>
+    <div class="sub">অডিও আপলোড করুন, Gemini দিয়ে বাংলা কথা লিখে নিন, Subtitle সম্পাদনা করে SRT ডাউনলোড করুন।</div>
+  </header>
+
+  <section class="card">
+    <h2>১. Gemini API Key</h2>
+    <label class="field" for="apiKey">আপনার Gemini API Key</label>
+    <input id="apiKey" type="password" autocomplete="off" placeholder="AIza...">
+    <div class="actions">
+      <button id="saveKey">Key Save</button><button id="showKey">Show / Hide</button><button id="deleteKey">Delete Key</button>
+      <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="align-self:center">Get API Key ↗</a>
+    </div>
+    <p class="small">Key এই browser-এর Local Storage-এ রাখা হয়। পাবলিক/shared website-এ API key রাখা নিরাপদ নয়। নিজের ব্যক্তিগত ব্যবহারের জন্যই এই সরাসরি HTML পদ্ধতি।</p>
+  </section>
+
+  <section class="card">
+    <h2>২. অডিও নির্বাচন</h2>
+    <label class="field" for="audioFile">Audio file (MP3, WAV, M4A, AAC, OGG, FLAC, WebM)</label>
+    <input id="audioFile" type="file" accept="audio/*">
+    <div id="fileInfo" class="small" style="margin-top:8px">কোনো অডিও নির্বাচন করা হয়নি।</div>
+    <div class="row">
+      <div><label class="field" for="language">Audio language</label>
+        <select id="language"><option value="bn-IN" selected>বাংলা (India)</option><option value="bn-BD">বাংলা (Bangladesh)</option><option value="">Auto detect</option><option value="en-US">English</option><option value="hi-IN">Hindi</option></select>
+      </div>
+      <div><label class="field" for="mode">Transcription mode</label>
+        <select id="mode"><option value="verbatim" selected>Verbatim — হুবহু কথা + timestamp</option><option value="smart">Smart — পরিষ্কার লেখা (timestamp নেই)</option></select>
+      </div>
+    </div>
+    <p class="small">Word-level timestamp চালু থাকলে মডেলের transcription accuracy কিছুটা কমতে পারে। Smart mode-এ timestamp পাওয়া যায় না; তখন SRT-এর সময় আনুমানিক তৈরি হবে।</p>
+    <div class="actions"><button class="primary" id="startBtn">Transcribe / SRT তৈরি</button><button id="clearBtn">Clear</button></div>
+    <progress id="progress" class="hidden" max="100" value="0"></progress>
+    <div id="status" class="status">Ready. API Key এবং Audio file দিন।</div>
+    <div class="small" id="provider">Provider: Not started</div>
+  </section>
+
+  <section class="card">
+    <div class="row"><h2 style="margin:0">৩. Subtitle Editor</h2><span id="count" class="pill">0 subtitle</span></div>
+    <div id="subtitleList"><p class="small">Transcription শেষ হলে subtitle এখানে দেখা যাবে।</p></div>
+    <div class="actions">
+      <button class="primary" id="downloadSrt" disabled>Download SRT</button>
+      <button id="downloadTxt" disabled>Download TXT</button>
+      <button id="copySrt" disabled>Copy SRT</button>
+    </div>
+  </section>
+  <footer class="small">Model: <b>gemini-3.5-transcribe</b> · API: Google Gemini Interactions API · <a href="https://ai.google.dev/gemini-api/docs/transcribe" target="_blank" rel="noopener">Official transcription guide</a><br>
+  আপনার অডিও Google-এর API-তে আপলোড হবে। Files API-তে আপলোড করা ফাইল সাধারণত ৪৮ ঘণ্টা পর্যন্ত থাকে। API usage অনুযায়ী খরচ/কোটা প্রযোজ্য হতে পারে।</footer>
 </main>
-<script type="module">
-const $=id=>document.getElementById(id);let file=null,worker=null,segments=[],editing=false,paused=false,started=0,timer=null,job=0;
-const status=(s,k='')=>{$('status').textContent=s;$('status').className='status '+k};
-const stamp=t=>{let n=Math.max(0,Math.round((Number(t)||0)*1000)),h=Math.floor(n/3600000),m=Math.floor(n%3600000/60000),s=Math.floor(n%60000/1000),ms=n%1000;return [h,m,s].map(x=>String(x).padStart(2,'0')).join(':')+','+String(ms).padStart(3,'0')};
-const seconds=v=>{let a=v.trim().replace(',','.').split(':');return a.length===3?+a[0]*3600+ +a[1]*60+ +a[2]:NaN};
-function srtText(){return segments.map((x,i)=>`${i+1}\n${stamp(x.start)} --> ${stamp(x.end)}\n${x.text.trim()}`).join('\n\n')+(segments.length?'\n':'')}
-function exports(){let ok=segments.some(x=>x.text.trim());['srt','txt','copy'].forEach(id=>$(id).disabled=!ok);$('raw').value=ok?srtText():'';$('count').textContent='Segments: '+segments.length;$('edit').disabled=!segments.length}
-function render(){let root=$('preview');root.innerHTML='';if(!segments.length){root.innerHTML='<div class="status">এখনও subtitle তৈরি হয়নি।</div>';exports();return}
-segments.forEach((x,i)=>{let box=document.createElement('div');box.className='sub';let tm=document.createElement('div');tm.className='time';tm.textContent=`#${i+1}  ${stamp(x.start)} → ${stamp(x.end)}`;box.append(tm);
-if(editing){let grid=document.createElement('div');grid.className='subgrid';let a=document.createElement('input'),b=document.createElement('input');a.value=stamp(x.start);b.value=stamp(x.end);a.addEventListener('change',()=>{let v=seconds(a.value);if(Number.isFinite(v)){x.start=Math.max(0,v);render()}});b.addEventListener('change',()=>{let v=seconds(b.value);if(Number.isFinite(v)){x.end=Math.max(x.start+.05,v);render()}});grid.append(a,b);box.append(grid);let ta=document.createElement('textarea');ta.value=x.text;ta.addEventListener('input',()=>{x.text=ta.value;exports()});box.append(ta)}
-else{let t=document.createElement('div');t.className='subtext';t.textContent=x.text;box.append(t)}root.append(box)});exports()}
-function busy(v){$('go').disabled=v||!file;$('audio').disabled=v;$('pause').disabled=!v;$('stop').disabled=!v}
-function clean(){if(worker){worker.terminate();worker=null}if(timer){clearInterval(timer);timer=null}busy(false);paused=false;$('pause').textContent='Pause'}
-function save(name,type,text){let u=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1200)}
-$('audio').addEventListener('change',()=>{file=$('audio').files[0]||null;$('fileinfo').textContent=file?file.name+' · '+(file.size/1048576).toFixed(1)+' MB':'কোনো ফাইল নির্বাচন করা হয়নি';$('go').disabled=!file});
-document.querySelector('.drop').addEventListener('dragover',e=>e.preventDefault());document.querySelector('.drop').addEventListener('drop',e=>{e.preventDefault();let f=e.dataTransfer.files[0];if(f?.type.startsWith('audio/')){let d=new DataTransfer();d.items.add(f);$('audio').files=d.files;$('audio').dispatchEvent(new Event('change'))}});
-function newWorker(){let src=`
-import{pipeline,env}from'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2';
-env.useBrowserCache=true;env.allowLocalModels=false;env.backends.onnx.wasm.numThreads=1;
-let pipe=null,stop=false,pause=false;
-self.onmessage=async e=>{let d=e.data;if(d.type==='stop'){stop=true;return}if(d.type==='pause'){pause=true;return}if(d.type==='resume'){pause=false;return}if(d.type!=='run')return;stop=false;pause=false;
-try{if(!pipe){self.postMessage({type:'status',text:'Whisper Small model loading / downloading…'});pipe=await pipeline('automatic-speech-recognition','onnx-community/whisper-small',{dtype:'q8',progress_callback:p=>{if(p.status==='progress')self.postMessage({type:'download',file:p.file||'',progress:p.progress||0});if(p.status==='done')self.postMessage({type:'status',text:'Model file ready: '+(p.file||'')});}});}
-let audio=d.audio,rate=16000,total=audio.length/rate,chunk=25,overlap=3,step=chunk-overlap,all=[];
-for(let offset=0;offset<total;offset+=step){while(pause&&!stop)await new Promise(r=>setTimeout(r,180));if(stop)break;
-let from=Math.floor(offset*rate),to=Math.min(audio.length,Math.floor((offset+chunk)*rate)),part=audio.slice(from,to);
-self.postMessage({type:'status',text:'বাংলা অডিও শনাক্ত হচ্ছে… '+Math.floor(offset)+'s / '+Math.ceil(total)+'s'});
-let out=await pipe(part,{language:'bengali',task:'transcribe',return_timestamps:true,chunk_length_s:20,stride_length_s:3});
-if(stop)break;let chunks=out.chunks||[];
-if(chunks.length){for(let c of chunks){let st=Array.isArray(c.timestamp)?c.timestamp[0]:c.start,en=Array.isArray(c.timestamp)?c.timestamp[1]:c.end;if(!Number.isFinite(st))st=0;if(!Number.isFinite(en))en=st+2;st+=offset;en+=offset;if(offset>0&&st<offset+overlap)continue;let text=(c.text||'').trim();if(text)all.push({start:st,end:Math.max(st+.1,en),text})}}
-else if(out.text?.trim())all.push({start:offset,end:Math.min(total,offset+part.length/rate),text:out.text.trim()});
-self.postMessage({type:'batch',segments:all.slice(-100),progress:Math.min(99,Math.round(to/audio.length*100))})}
-if(stop){self.postMessage({type:'stopped'});return}self.postMessage({type:'done',segments:all});
-}catch(err){self.postMessage({type:'error',text:err?.stack||err?.message||String(err)})}};`;
-return new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})),{type:'module'})}
-async function decode(f){let ctx=new(window.AudioContext||window.webkitAudioContext)();try{let b=await f.arrayBuffer(),d=await ctx.decodeAudioData(b),n=d.length,mono=new Float32Array(n);for(let c=0;c<d.numberOfChannels;c++){let ch=d.getChannelData(c);for(let i=0;i<n;i++)mono[i]+=ch[i]/d.numberOfChannels}if(d.sampleRate===16000)return mono;let ratio=d.sampleRate/16000,out=new Float32Array(Math.ceil(n/ratio));for(let i=0;i<out.length;i++){let p=i*ratio,l=Math.floor(p),f=p-l;out[i]=mono[l]*(1-f)+mono[Math.min(l+1,n-1)]*f}return out}finally{await ctx.close()}}
-$('go').addEventListener('click',async()=>{if(!file)return;let id=++job;segments=[];editing=false;$('edit').textContent='Edit';render();$('bar').value=0;busy(true);started=Date.now();timer=setInterval(()=>$('elapsed').textContent='Time: '+stamp((Date.now()-started)/1000).slice(3,8),1000);
-try{status('Audio decode ও 16 kHz conversion হচ্ছে…');let audio=await decode(file);if(id!==job)return;worker=newWorker();worker.onmessage=e=>{if(id!==job)return;let d=e.data;
-if(d.type==='status'){status(d.text);$('model').textContent='Model: loading / ready'}
-if(d.type==='download'){$('bar').value=Math.min(100,d.progress);status('Model download: '+Math.round(d.progress)+'% · '+d.file)}
-if(d.type==='batch'){segments=d.segments;render();$('bar').value=d.progress;status('Live Preview · '+d.progress+'% · '+segments.length+' segments','ok')}
-if(d.type==='done'){segments=d.segments.sort((a,b)=>a.start-b.start);render();$('bar').value=100;status('সম্পন্ন! '+segments.length+'টি subtitle segment তৈরি হয়েছে।','ok');$('model').textContent='Model: ready / cached';clean()}
-if(d.type==='stopped'){status('Processing বন্ধ হয়েছে। তৈরি হওয়া subtitle রাখা হয়েছে।');clean()}
-if(d.type==='error'){status('Processing error:\\n'+d.text,'err');clean()}};
-worker.onerror=e=>{status('Worker error: '+e.message,'err');clean()};worker.postMessage({type:'run',audio},[audio.buffer]);status('Model initialize হচ্ছে…')
-}catch(e){status('Audio / browser error: '+(e.message||e),'err');clean()}});
-$('pause').addEventListener('click',()=>{if(!worker)return;paused=!paused;worker.postMessage({type:paused?'pause':'resume'});$('pause').textContent=paused?'Resume':'Pause';status(paused?'Paused. Resume চাপলে আবার চলবে।':'Processing আবার শুরু হয়েছে।')});
-$('stop').addEventListener('click',()=>{job++;if(worker)worker.postMessage({type:'stop'});status('Processing থামানো হয়েছে।');clean()});
-$('edit').addEventListener('click',()=>{editing=!editing;$('edit').textContent=editing?'Done':'Edit';render()});
-$('srt').addEventListener('click',()=>save((file?.name||'subtitle').replace(/\.[^.]+$/,'')+'.srt','application/x-subrip;charset=utf-8',srtText()));
-$('txt').addEventListener('click',()=>save((file?.name||'transcript').replace(/\.[^.]+$/,'')+'.txt','text/plain;charset=utf-8',segments.map(x=>x.text).join('\n')));
-$('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(srtText());status('SRT কপি হয়েছে।','ok')}catch{status('Clipboard blocked. নিচের SRT text manually copy করুন।','err')}});
-</script></body></html>
+<script>
+(() => {
+"use strict";
+const MODEL = "gemini-3.5-transcribe";
+const $ = id => document.getElementById(id);
+let subtitles = [];
+let audioDuration = 0;
+let busy = false;
+
+function setStatus(message, kind="") {
+  $("status").textContent = message;
+  $("status").className = "status" + (kind ? " " + kind : "");
+}
+function setBusy(value) {
+  busy = value;
+  $("startBtn").disabled = value;
+  $("clearBtn").disabled = value;
+  $("progress").classList.toggle("hidden", !value);
+  if (value) $("progress").value = 8;
+}
+function apiError(data, response) {
+  const msg = data?.error?.message || data?.message || `HTTP ${response.status} ${response.statusText}`;
+  return msg;
+}
+function mimeFor(file) {
+  if (file.type && file.type.startsWith("audio/")) return file.type;
+  const ext = file.name.split(".").pop().toLowerCase();
+  const map = {mp3:"audio/mpeg",wav:"audio/wav",m4a:"audio/mp4",aac:"audio/aac",ogg:"audio/ogg",flac:"audio/flac",webm:"audio/webm",aiff:"audio/aiff",opus:"audio/opus"};
+  return map[ext] || "application/octet-stream";
+}
+function parseOffset(value) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (/^\d+(\.\d+)?$/.test(s)) return Number(s);
+    const m = s.match(/(?:(\d+):)?(\d{1,2}):(\d{1,2})(?:[.,](\d+))?/);
+    if (m) return Number(m[1]||0)*3600 + Number(m[2])*60 + Number(m[3]) + Number("0."+(m[4]||"0"));
+    const sec = s.match(/(\d+(?:\.\d+)?)\s*s/i);
+    if (sec) return Number(sec[1]);
+    const ms = s.match(/(\d+(?:\.\d+)?)\s*ms/i);
+    if (ms) return Number(ms[1])/1000;
+  }
+  if (value && typeof value === "object") {
+    if (typeof value.seconds === "number") return value.seconds + (value.nanos||0)/1e9;
+    if (typeof value.value === "number") return value.value;
+  }
+  return NaN;
+}
+function collectAnnotations(obj, out=[]) {
+  if (!obj || typeof obj !== "object") return out;
+  if (Array.isArray(obj)) { for (const x of obj) collectAnnotations(x,out); return out; }
+  if (obj.type === "word_info" || obj.type === "wordInfo") {
+    const start = parseOffset(obj.start_offset ?? obj.startOffset ?? obj.start);
+    const end = parseOffset(obj.end_offset ?? obj.endOffset ?? obj.end);
+    const word = obj.text ?? obj.word ?? obj.content;
+    if (word && Number.isFinite(start) && Number.isFinite(end)) out.push({text:String(word),start,end,speaker:obj.speaker});
+  }
+  for (const [k,v] of Object.entries(obj)) if (v && typeof v === "object") collectAnnotations(v,out);
+  return out;
+}
+function getOutputText(data) {
+  if (typeof data.output_text === "string" && data.output_text.trim()) return data.output_text.trim();
+  const bits = [];
+  const visit = obj => {
+    if (!obj || typeof obj !== "object") return;
+    if (Array.isArray(obj)) { obj.forEach(visit); return; }
+    if (obj.type === "text" && typeof obj.text === "string") bits.push(obj.text);
+    for (const [k,v] of Object.entries(obj)) if (k !== "text" && v && typeof v === "object") visit(v);
+  };
+  visit(data.outputs || data.steps || data);
+  return bits.join("\n").trim();
+}
+function makeSubtitlesFromWords(words) {
+  words.sort((a,b)=>a.start-b.start);
+  const result=[]; let group=[];
+  const flush=()=> {
+    if (!group.length) return;
+    result.push({start:group[0].start,end:group[group.length-1].end,text:group.map(x=>x.text).join(" ").replace(/\s+([,.;!?।])/g,"$1"),speaker:group[0].speaker||""});
+    group=[];
+  };
+  for (const w of words) {
+    const candidate = group.map(x=>x.text).join(" ") + (group.length?" ":"") + w.text;
+    const gap = group.length ? w.start-group[group.length-1].end : 0;
+    if (group.length && (candidate.length>48 || group.length>=8 || gap>1.0 || (/[.!?।]$/.test(group[group.length-1].text)))) flush();
+    group.push(w);
+  }
+  flush();
+  return result;
+}
+function estimateSubtitles(text) {
+  const clean = text.replace(/\r/g,"").trim();
+  let parts = clean.split(/(?<=[।!?])\s+|\n+/).filter(Boolean);
+  if (!parts.length) parts=[clean];
+  const lines=[];
+  for (const p of parts) {
+    let rest=p.trim();
+    while(rest.length>90){let cut=rest.lastIndexOf(" ",90);if(cut<35)cut=90;lines.push(rest.slice(0,cut).trim());rest=rest.slice(cut).trim();}
+    if(rest)lines.push(rest);
+  }
+  const totalChars=lines.reduce((s,x)=>s+x.length,0)||1;
+  let t=0;
+  return lines.map(line=>{const dur=Math.max(1.4,audioDuration*(line.length/totalChars));const item={start:t,end:Math.min(audioDuration||t+dur,t+dur),text:line,speaker:""};t=item.end;return item;});
+}
+function fmtTime(seconds) {
+  const ms=Math.max(0,Math.round(seconds*1000));
+  const h=Math.floor(ms/3600000), m=Math.floor(ms%3600000/60000), s=Math.floor(ms%60000/1000), milli=ms%1000;
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")},${String(milli).padStart(3,"0")}`;
+}
+function srtText() {
+  return subtitles.map((x,i)=>`${i+1}\n${fmtTime(x.start)} --> ${fmtTime(x.end)}\n${x.text}`).join("\n\n") + (subtitles.length?"\n":"");
+}
+function render() {
+  $("count").textContent = `${subtitles.length} subtitle`;
+  const root=$("subtitleList"); root.innerHTML="";
+  if (!subtitles.length) {root.innerHTML='<p class="small">কোনো subtitle নেই।</p>';return;}
+  subtitles.forEach((s,i)=>{
+    const box=document.createElement("div");box.className="subitem";
+    const head=document.createElement("div");head.className="subhead";
+    const label=document.createElement("span");label.textContent=`Subtitle ${i+1}${s.speaker?" · "+s.speaker:""}`;
+    const del=document.createElement("button");del.textContent="Delete";del.style.padding="6px 9px";del.onclick=()=>{subtitles.splice(i,1);render();};
+    head.append(label,del);
+    const times=document.createElement("div");times.className="times";
+    const a=document.createElement("input");a.type="number";a.step=".01";a.min="0";a.value=s.start.toFixed(2);a.setAttribute("aria-label","Start seconds");
+    const b=document.createElement("input");b.type="number";b.step=".01";b.min="0";b.value=s.end.toFixed(2);b.setAttribute("aria-label","End seconds");
+    a.onchange=()=>{s.start=Math.max(0,Number(a.value)||0);};
+    b.onchange=()=>{s.end=Math.max(s.start,Number(b.value)||s.start);};
+    times.append(a,b);
+    const text=document.createElement("textarea");text.value=s.text;text.setAttribute("aria-label","Subtitle text");text.oninput=()=>s.text=text.value;
+    box.append(head,times,text);root.append(box);
+  });
+  const has=!!subtitles.length;
+  $("downloadSrt").disabled=!has;$("downloadTxt").disabled=!has;$("copySrt").disabled=!has;
+}
+function download(name,content,type) {
+  const blob=new Blob([content],{type});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+async function uploadToGemini(file,key) {
+  const mime=mimeFor(file), size=file.size;
+  setStatus("Step 1/3: Gemini Files API-তে অডিও আপলোড শুরু হচ্ছে…");
+  $("progress").value=12;
+  const init=await fetch("https://generativelanguage.googleapis.com/upload/v1beta/files",{
+    method:"POST",
+    headers:{
+      "x-goog-api-key":key,
+      "X-Goog-Upload-Protocol":"resumable",
+      "X-Goog-Upload-Command":"start",
+      "X-Goog-Upload-Header-Content-Length":String(size),
+      "X-Goog-Upload-Header-Content-Type":mime,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({file:{display_name:file.name}})
+  });
+  if(!init.ok){let d={};try{d=await init.json()}catch{}throw new Error("File upload session তৈরি হয়নি: "+apiError(d,init));}
+  const uploadUrl=init.headers.get("x-goog-upload-url");
+  if(!uploadUrl) throw new Error("Google upload URL পাওয়া যায়নি। Browser CORS/Network বাধা দিতে পারে। Chrome-এ GitHub Pages URL খুলে আবার চেষ্টা করুন।");
+  $("progress").value=35;setStatus("Step 2/3: অডিও Google-এ আপলোড হচ্ছে…");
+  const uploaded=await fetch(uploadUrl,{
+    method:"POST",
+    headers:{"Content-Length":String(size),"X-Goog-Upload-Offset":"0","X-Goog-Upload-Command":"upload, finalize"},
+    body:file
+  });
+  const fileData=await uploaded.json().catch(()=>({}));
+  if(!uploaded.ok) throw new Error("Audio upload ব্যর্থ: "+apiError(fileData,uploaded));
+  const uri=fileData?.file?.uri;
+  if(!uri) throw new Error("Google upload শেষ হয়েছে, কিন্তু File URI পাওয়া যায়নি।");
+  return {uri,mime};
+}
+async function runTranscription() {
+  if(busy)return;
+  const key=$("apiKey").value.trim();
+  const file=$("audioFile").files[0];
+  if(!key){setStatus("আগে Gemini API Key দিন।","bad");return;}
+  if(!file){setStatus("আগে একটি audio file নির্বাচন করুন।","bad");return;}
+  if(file.size>2*1024*1024*1024){setStatus("ফাইলটি 2 GB-এর বেশি। ছোট ফাইল ব্যবহার করুন।","bad");return;}
+  setBusy(true);subtitles=[];render();$("provider").textContent=`Provider: Google Gemini · Model: ${MODEL}`;
+  try {
+    const audioUrl=URL.createObjectURL(file);
+    try {const a=new Audio();a.src=audioUrl;await new Promise(resolve=>{a.onloadedmetadata=()=>{audioDuration=a.duration||0;resolve();};a.onerror=()=>resolve();});} finally {URL.revokeObjectURL(audioUrl);}
+    const {uri,mime}=await uploadToGemini(file,key);
+    $("progress").value=68;setStatus("Step 3/3: Gemini transcription চলছে…");
+    const transConfig={};
+    const lang=$("language").value;
+    if(lang) transConfig.language_codes=[lang];
+    if($("mode").value==="smart") transConfig.mode="smart";
+    else transConfig.mode={type:"verbatim",timestamp_granularities:["word"]};
+    const response=await fetch("https://generativelanguage.googleapis.com/v1beta/interactions",{
+      method:"POST",
+      headers:{"x-goog-api-key":key,"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:MODEL,
+        input:[{type:"audio",uri,mime_type:mime}],
+        generation_config:{transcription_config:transConfig}
+      })
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error("Gemini API error: "+apiError(data,response));
+    $("progress").value=90;
+    const text=getOutputText(data);
+    const words=collectAnnotations(data);
+    if(words.length) subtitles=makeSubtitlesFromWords(words);
+    else if(text) subtitles=estimateSubtitles(text);
+    if(!subtitles.length) throw new Error("Gemini কোনো transcript ফেরত দেয়নি। Response format: "+JSON.stringify(data).slice(0,900));
+    render();$("progress").value=100;
+    const timing=words.length?"Gemini word timestamps":"Estimated timestamps (Gemini transcript-এ word timestamp পাওয়া যায়নি)";
+    setStatus(`সফল! ${subtitles.length}টি subtitle তৈরি হয়েছে।\n${timing}\nএখন subtitle edit করে SRT ডাউনলোড করুন।`,"good");
+    $("provider").textContent=`Using: Google Gemini · ${MODEL} · ${words.length?"Word timestamps":"Estimated timing"}`;
+  } catch(err) {
+    console.error(err);
+    setStatus("কাজ সম্পূর্ণ হয়নি:\n"+(err?.message||String(err))+"\n\nসমাধান: API Key ঠিক আছে কি না, model access/quota আছে কি না এবং Chrome-এ internet/CORS অনুমতি আছে কি না পরীক্ষা করুন।","bad");
+  } finally {setBusy(false);}
+}
+$("saveKey").onclick=()=>{const k=$("apiKey").value.trim();if(!k){setStatus("Save করার আগে API Key দিন।","bad");return;}localStorage.setItem("gemini_audio_srt_key",k);setStatus("API Key এই browser-এ save হয়েছে।","good");};
+$("showKey").onclick=()=>{$("apiKey").type=$("apiKey").type==="password"?"text":"password";};
+$("deleteKey").onclick=()=>{localStorage.removeItem("gemini_audio_srt_key");$("apiKey").value="";setStatus("Saved API Key মুছে ফেলা হয়েছে।");};
+$("apiKey").value=localStorage.getItem("gemini_audio_srt_key")||"";
+$("audioFile").onchange=()=>{const f=$("audioFile").files[0];$("fileInfo").textContent=f?`${f.name} · ${(f.size/1024/1024).toFixed(2)} MB · ${mimeFor(f)}`:"কোনো অডিও নির্বাচন করা হয়নি।";};
+$("startBtn").onclick=runTranscription;
+$("clearBtn").onclick=()=>{if(busy)return;$("audioFile").value="";$("fileInfo").textContent="কোনো অডিও নির্বাচন করা হয়নি।";subtitles=[];audioDuration=0;render();setStatus("Cleared.");$("provider").textContent="Provider: Not started";};
+$("downloadSrt").onclick=()=>download("bengali-subtitles.srt",srtText(),"application/x-subrip;charset=utf-8");
+$("downloadTxt").onclick=()=>download("bengali-transcript.txt",subtitles.map(x=>x.text).join("\n"),"text/plain;charset=utf-8");
+$("copySrt").onclick=async()=>{try{await navigator.clipboard.writeText(srtText());setStatus("SRT clipboard-এ copy হয়েছে।","good");}catch{setStatus("Copy করা যায়নি। Download SRT ব্যবহার করুন।","bad");}};
+})();
+</script>
+</body>
+</html>
