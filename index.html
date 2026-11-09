@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>বাংলা অডিও → SRT | Offline Subtitle Maker</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#121d30;--panel2:#192740;--line:#2a3b57;--text:#edf3ff;--muted:#a9b8cf;--accent:#6ee7b7;--blue:#7db7ff;--danger:#ff8c8c}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(150deg,#0b1220,#101b2d 55%,#0b1220);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Noto Sans Bengali",sans-serif}
+main{max-width:850px;margin:auto;padding:22px 15px 48px}.hero{padding:10px 2px 18px}.eyebrow{color:var(--accent);font-weight:700;letter-spacing:.04em;font-size:13px}.hero h1{font-size:clamp(25px,6vw,38px);line-height:1.2;margin:8px 0}.hero p,.muted{color:var(--muted)}
+.card{background:rgba(18,29,48,.96);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 12px 35px #0002}
+h2{font-size:19px;margin:0 0 12px}.drop{border:1.5px dashed #527098;border-radius:14px;padding:24px 15px;text-align:center;background:#17253a;cursor:pointer}.drop strong{display:block;font-size:18px}.drop small{color:var(--muted)}
+input[type=file]{display:none}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.btn{border:0;border-radius:12px;padding:12px 17px;font-weight:750;font-size:15px;background:var(--accent);color:#06251b;cursor:pointer}.btn.secondary{background:#263a58;color:var(--text);border:1px solid #3b5275}.btn:disabled{opacity:.45;cursor:not-allowed}
+.status{padding:12px 14px;background:#17253a;border-radius:12px;color:var(--muted);margin-top:12px;white-space:pre-wrap}.status.good{color:#9df4ce}.status.bad{color:#ffaaaa}
+progress{width:100%;height:12px;accent-color:var(--accent);margin:12px 0 4px}textarea{width:100%;min-height:260px;background:#0b1423;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:13px;font:14px/1.6 ui-monospace,monospace;resize:vertical}
+.note{font-size:13px;color:var(--muted)}.pill{display:inline-block;border:1px solid #42617e;border-radius:999px;padding:3px 9px;font-size:12px;color:#c9ddf8;margin:3px 4px 3px 0}.warning{border-left:3px solid #f4c56a;padding:10px 12px;background:#302a1e;border-radius:8px;color:#f7dfae;font-size:13px}
+.fileinfo{color:var(--accent);font-size:14px;overflow-wrap:anywhere}.footer{font-size:12px;color:#91a2bb;text-align:center;margin-top:22px}
+</style>
+</head>
+<body>
+<main>
+<header class="hero">
+ <div class="eyebrow">FREE • BROWSER-BASED • BENGALI SPEECH TO TEXT</div>
+ <h1>বাংলা অডিও → SRT</h1>
+ <p>Whisper Small multilingual model দিয়ে বাংলা অডিও থেকে timestamp-সহ subtitle তৈরি করুন।</p>
+ <span class="pill">Whisper Small · Q8</span><span class="pill">No API key</span><span class="pill">SRT download</span>
+</header>
+
+<section class="card">
+ <h2>১. অডিও ফাইল নির্বাচন করুন</h2>
+ <label class="drop" for="audioFile" id="dropZone">
+  <strong>অডিও ফাইল এখানে নির্বাচন করুন</strong>
+  <small>MP3, WAV, M4A, AAC, OGG, FLAC (ব্রাউজার সমর্থন অনুযায়ী)</small>
+ </label>
+ <input id="audioFile" type="file" accept="audio/*">
+ <p class="fileinfo" id="fileInfo">কোনো অডিও নির্বাচন করা হয়নি।</p>
+ <div class="row">
+  <button class="btn" id="startBtn" disabled>বাংলা সাবটাইটেল তৈরি করুন</button>
+  <button class="btn secondary" id="stopBtn" disabled>থামান</button>
+ </div>
+ <progress id="progress" value="0" max="100"></progress>
+ <div class="status" id="status" role="status" aria-live="polite">প্রস্তুত। প্রথমবার মডেল ও প্রয়োজনীয় ফাইল ডাউনলোড করতে ইন্টারনেট লাগবে।</div>
+</section>
+
+<section class="card">
+ <h2>২. তৈরি হওয়া SRT</h2>
+ <textarea id="srtText" spellcheck="false" placeholder="এখানে SRT subtitle দেখা যাবে। তৈরি হলে চাইলে লেখা সম্পাদনা করতে পারবেন..."></textarea>
+ <div class="row" style="margin-top:12px">
+  <button class="btn" id="downloadBtn" disabled>SRT ডাউনলোড</button>
+  <button class="btn secondary" id="copyBtn" disabled>কপি করুন</button>
+ </div>
+</section>
+
+<section class="card">
+ <h2>গুরুত্বপূর্ণ: Offline ও Background</h2>
+ <div class="warning">প্রথমবার CDN runtime এবং প্রায় কয়েকশ MB মডেল ফাইল ডাউনলোড হবে। ব্রাউজারের cache-এ সংরক্ষণের চেষ্টা করা হয়; cache মুছে গেলে বা browser storage পরিষ্কার হলে আবার download লাগতে পারে। একটিমাত্র HTML ফাইলে runtime ও Whisper model এমবেড করা নেই।</div>
+ <p class="note">প্রসেসিং আলাদা Web Worker-এ চলে, তাই একই ট্যাবের UI সচল থাকবে এবং অন্য অ্যাপে গেলে কিছু সময় চলতে পারে। তবে Android Chrome/ফোন OS ব্যাটারি বা মেমোরির কারণে background tab suspend/বন্ধ করতে পারে। স্ক্রিন বন্ধ বা অ্যাপ বদলালেও ১০০% চলবে—এমন নিশ্চয়তা নেই। কাজের সময় ট্যাব খোলা রাখাই ভালো।</p>
+ <p class="note">দীর্ঘ অডিওতে RAM ও সময় বেশি লাগবে। Whisper Small মডেল পুরোনো/কম RAM ফোনে ধীর হতে পারে। ফলাফল শুনে subtitle ঠিক করে নিন—বিশেষ নাম, আঞ্চলিক উচ্চারণ ও শব্দে ভুল হতে পারে।</p>
+</section>
+<div class="footer">আপনার অডিও ফাইল কোনো সার্ভারে আপলোড করা হয় না; inference আপনার ব্রাউজারেই হয়। মডেল/runtime ডাউনলোডের সময় সংশ্লিষ্ট CDN/Hugging Face হোস্টে সংযোগ হবে।</div>
+</main>
+<script type="module">
+const $ = id => document.getElementById(id);
+const fileInput=$('audioFile'), startBtn=$('startBtn'), stopBtn=$('stopBtn');
+const statusEl=$('status'), progress=$('progress'), srtText=$('srtText');
+let selectedFile=null, worker=null, busy=false, stopped=false;
+
+function setStatus(msg,kind=''){statusEl.textContent=msg;statusEl.className='status '+kind}
+function fmtTime(sec){
+  sec=Math.max(0,Number(sec)||0);
+  const ms=Math.round(sec*1000), h=Math.floor(ms/3600000), m=Math.floor(ms%3600000/60000),
+        s=Math.floor(ms%60000/1000), milli=ms%1000;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(milli).padStart(3,'0')}`;
+}
+function makeSrt(chunks){
+  return chunks.map((c,i)=>{
+    const start=Array.isArray(c.timestamp)?c.timestamp[0]:c.start;
+    const end=Array.isArray(c.timestamp)?c.timestamp[1]:c.end;
+    let text=(c.text||'').trim().replace(/\s+/g,' ');
+    if(!text)return null;
+    const a=Number.isFinite(start)?start:0;
+    const b=Number.isFinite(end)?end:a+2;
+    return `${i+1}\n${fmtTime(a)} --> ${fmtTime(Math.max(a+.15,b))}\n${text}`;
+  }).filter(Boolean).join('\n\n')+'\n';
+}
+function setBusy(v){
+ busy=v;startBtn.disabled=v||!selectedFile;stopBtn.disabled=!v;
+ fileInput.disabled=v;
+}
+fileInput.addEventListener('change',()=>{
+ selectedFile=fileInput.files?.[0]||null;
+ $('fileInfo').textContent=selectedFile?`${selectedFile.name} · ${(selectedFile.size/1024/1024).toFixed(1)} MB`:'কোনো অডিও নির্বাচন করা হয়নি।';
+ startBtn.disabled=!selectedFile||busy;
+});
+const drop=$('dropZone');
+for(const ev of ['dragenter','dragover'])drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#6ee7b7'});
+for(const ev of ['dragleave','drop'])drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#527098'});
+drop.addEventListener('drop',e=>{
+ if(busy)return; const f=e.dataTransfer.files?.[0]; if(f&&f.type.startsWith('audio/')){
+  const dt=new DataTransfer();dt.items.add(f);fileInput.files=dt.files;fileInput.dispatchEvent(new Event('change'));
+ }
+});
+function makeWorker(){
+ const source = `
+ import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2';
+ env.useBrowserCache = true;
+ env.allowLocalModels = false;
+ env.backends.onnx.wasm.numThreads = 1;
+ let transcriber=null, cancelled=false;
+ self.onmessage=async(e)=>{
+  const {audio}=e.data; cancelled=false;
+  try{
+   if(!transcriber){
+    self.postMessage({type:'status',message:'Whisper Small model ডাউনলোড/লোড হচ্ছে… প্রথমবার সময় লাগতে পারে।'});
+    transcriber=await pipeline('automatic-speech-recognition','onnx-community/whisper-small',{
+      dtype:'q8',
+      progress_callback:(p)=>{
+       if(p.status==='progress'){
+        self.postMessage({type:'download',file:p.file||'',progress:p.progress||0});
+       } else if(p.status==='initiate'||p.status==='done'){
+        self.postMessage({type:'status',message:(p.status==='done'?'ডাউনলোড সম্পূর্ণ: ':'ডাউনলোড শুরু: ')+(p.file||'মডেল ফাইল')});
+       }
+      }
+    });
+   }
+   if(cancelled)return;
+   self.postMessage({type:'status',message:'বাংলা অডিও শনাক্ত করা হচ্ছে…'});
+   const result=await transcriber(audio,{
+     language:'bengali',
+     task:'transcribe',
+     return_timestamps:true,
+     chunk_length_s:30,
+     stride_length_s:5
+   });
+   if(!cancelled)self.postMessage({type:'result',result});
+  }catch(err){self.postMessage({type:'error',message:err?.message||String(err)});}
+ };
+ self.onmessageerror=()=>self.postMessage({type:'error',message:'Worker message error'});
+ `;
+ const blob=new Blob([source],{type:'text/javascript'});
+ return new Worker(URL.createObjectURL(blob),{type:'module'});
+}
+async function decodeAndResample(file){
+ const bytes=await file.arrayBuffer();
+ const Ctx=window.AudioContext||window.webkitAudioContext;
+ const ctx=new Ctx();
+ try{
+  const decoded=await ctx.decodeAudioData(bytes.slice(0));
+  const input=decoded.getChannelData(0), targetRate=16000;
+  const outLength=Math.ceil(input.length*targetRate/decoded.sampleRate);
+  const output=new Float32Array(outLength);
+  const ratio=decoded.sampleRate/targetRate;
+  for(let i=0;i<outLength;i++){
+   const pos=i*ratio, left=Math.floor(pos), frac=pos-left;
+   const a=input[Math.min(left,input.length-1)], b=input[Math.min(left+1,input.length-1)];
+   output[i]=a+(b-a)*frac;
+  }
+  return output;
+ }finally{await ctx.close();}
+}
+startBtn.addEventListener('click',async()=>{
+ if(!selectedFile||busy)return;
+ setBusy(true);stopped=false;progress.value=0;srtText.value='';
+ setStatus('অডিও প্রস্তুত করা হচ্ছে…');
+ try{
+  const audio=await decodeAndResample(selectedFile);
+  if(stopped)throw new Error('ব্যবহারকারী প্রসেসিং থামিয়েছেন।');
+  worker=makeWorker();
+  worker.onmessage=(e)=>{
+   const d=e.data;
+   if(d.type==='status')setStatus(d.message);
+   if(d.type==='download'){
+    progress.value=Math.max(0,Math.min(100,d.progress));
+    setStatus(`মডেল ডাউনলোড হচ্ছে: ${d.file||''}\n${Math.round(d.progress)}%`);
+   }
+   if(d.type==='result'){
+    const chunks=d.result?.chunks||[];
+    if(chunks.length){
+     srtText.value=makeSrt(chunks);
+    }else if(d.result?.text){
+     srtText.value=`1\n${fmtTime(0)} --> ${fmtTime(audio.length/16000)}\n${d.result.text.trim()}\n`;
+    }
+    progress.value=100;
+    $('downloadBtn').disabled=!srtText.value.trim();
+    $('copyBtn').disabled=!srtText.value.trim();
+    setStatus(`সম্পন্ন! ${chunks.length||1}টি subtitle segment তৈরি হয়েছে। SRT দেখে প্রয়োজনমতো সম্পাদনা করুন।`,'good');
+    cleanup();
+   }
+   if(d.type==='error'){setStatus('সমস্যা হয়েছে: '+d.message,'bad');cleanup();}
+  };
+  worker.onerror=(e)=>{setStatus('Worker error: '+(e.message||'অজানা সমস্যা'),'bad');cleanup()};
+  worker.postMessage({audio},[audio.buffer]);
+  setStatus('মডেল প্রস্তুত হচ্ছে…');
+ }catch(err){setStatus('সমস্যা: '+err.message,'bad');cleanup();}
+});
+function cleanup(){
+ if(worker){worker.terminate();worker=null}
+ setBusy(false);
+}
+stopBtn.addEventListener('click',()=>{
+ stopped=true;
+ if(worker){worker.terminate();worker=null}
+ setStatus('প্রসেসিং থামানো হয়েছে।','bad');setBusy(false);
+});
+$('downloadBtn').addEventListener('click',()=>{
+ const blob=new Blob([srtText.value],{type:'application/x-subrip;charset=utf-8'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=(selectedFile?.name||'bengali-subtitles').replace(/\.[^.]+$/,'')+'.srt';
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+});
+$('copyBtn').addEventListener('click',async()=>{
+ try{await navigator.clipboard.writeText(srtText.value);setStatus('SRT কপি হয়েছে।','good')}
+ catch{setStatus('Clipboard access পাওয়া যায়নি। SRT বক্স থেকে ম্যানুয়ালি কপি করুন।','bad')}
+});
+</script>
+</body>
+</html>
